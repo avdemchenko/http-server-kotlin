@@ -13,10 +13,12 @@ fun main() {
         val writer = socket.getOutputStream().bufferedWriter()
         val reader = socket.getInputStream().bufferedReader()
         val request = reader.readLine()
-        val headers = mutableListOf<String>()
+        val headers = mutableMapOf<String, String>()
         var read = reader.readLine()
         while (read != null && read.isNotEmpty()) {
-            headers.add(read)
+            read.split(":").also { strings ->
+                headers[strings[0]] = strings[1].trim()
+            }
             read = reader.readLine()
         }
         println("request: $request")
@@ -30,8 +32,14 @@ fun main() {
             val str = requestTarget.substringAfter("/echo/")
             writer.write(
                 "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${
-                    str.encodeToByteArray()
-                        .size
+                    str.encodeToByteArray().size
+                }\r\n\r\n$str"
+            )
+        } else if (requestTarget == "/user-agent") {
+            val str = headers["User-Agent"]!!
+            writer.write(
+                "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${
+                    str.encodeToByteArray().size
                 }\r\n\r\n$str"
             )
         } else {
