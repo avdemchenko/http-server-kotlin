@@ -1,14 +1,23 @@
 package org.example
 
 import java.net.ServerSocket
+import java.net.Socket
+import java.util.concurrent.Executors
 
 fun main() {
     val serverSocket = ServerSocket(4221)
     serverSocket.reuseAddress = true
+    val threadPool = Executors.newFixedThreadPool(10)
 
-    val socket = serverSocket.accept()
-    println("New connection has been accepted")
+    while (true) {
+        val socket = serverSocket.accept()
+        threadPool.submit {
+            handle(socket)
+        }
+    }
+}
 
+fun handle(socket: Socket) {
     socket.use {
         val writer = socket.getOutputStream().bufferedWriter()
         val reader = socket.getInputStream().bufferedReader()
@@ -23,7 +32,6 @@ fun main() {
         }
         println("request: $request")
         println("headers: $headers")
-
         val requestArgs = request.split(Regex("\\s+"))
         val requestTarget = requestArgs[1]
         if (requestTarget == "/") {
